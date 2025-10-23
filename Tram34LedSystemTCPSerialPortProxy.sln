@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34622.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{FCEBDF1C-E916-425B-9C91-76C58458B2D3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{02AF83FA-2EDD-4FD8-A1B1-D110988FAD01}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{0941C87E-FC74-4080-B479-7D860C686EBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tram34LedSystemTCPSerialPortProxy.Application", "Core\Tram34LedSystemTCPSerialPortProxy.Application\Tram34LedSystemTCPSerialPortProxy.Application.csproj", "{D285D54A-D0F2-4222-B8A8-F345BF333F62}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tram34LedSystemTCPSerialPortProxy.Domain", "Core\Tram34LedSystemTCPSerialPortProxy.Domain\Tram34LedSystemTCPSerialPortProxy.Domain.csproj", "{BE1A66F5-3334-4A2D-9551-4995CFC06F3E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tram34LedSystemTCPSerialPortProxy.ConsoleApp", "Presentation\Tram34LedSystemTCPSerialPortProxy.ConsoleApp\Tram34LedSystemTCPSerialPortProxy.ConsoleApp.csproj", "{3A53ED31-A9AF-4719-AA60-17EF862B0816}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tram34LedSystemTCPSerialPortProxy.Infrastructure", "Infrastructure\Tram34LedSystemTCPSerialPortProxy.Infrastructure\Tram34LedSystemTCPSerialPortProxy.Infrastructure.csproj", "{439CFBBA-3BDC-4D5C-A99E-01B692FE8B76}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tram34LedSystemTCPSerialPortProxy.Persistence", "Infrastructure\Tram34LedSystemTCPSerialPortProxy.Persistence\Tram34LedSystemTCPSerialPortProxy.Persistence.csproj", "{C8EA6E5D-C981-4ECB-8F20-313E731693DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D285D54A-D0F2-4222-B8A8-F345BF333F62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D285D54A-D0F2-4222-B8A8-F345BF333F62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D285D54A-D0F2-4222-B8A8-F345BF333F62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D285D54A-D0F2-4222-B8A8-F345BF333F62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE1A66F5-3334-4A2D-9551-4995CFC06F3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE1A66F5-3334-4A2D-9551-4995CFC06F3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE1A66F5-3334-4A2D-9551-4995CFC06F3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE1A66F5-3334-4A2D-9551-4995CFC06F3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A53ED31-A9AF-4719-AA60-17EF862B0816}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A53ED31-A9AF-4719-AA60-17EF862B0816}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A53ED31-A9AF-4719-AA60-17EF862B0816}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A53ED31-A9AF-4719-AA60-17EF862B0816}.Release|Any CPU.Build.0 = Release|Any CPU
+		{439CFBBA-3BDC-4D5C-A99E-01B692FE8B76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{439CFBBA-3BDC-4D5C-A99E-01B692FE8B76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{439CFBBA-3BDC-4D5C-A99E-01B692FE8B76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{439CFBBA-3BDC-4D5C-A99E-01B692FE8B76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8EA6E5D-C981-4ECB-8F20-313E731693DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8EA6E5D-C981-4ECB-8F20-313E731693DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8EA6E5D-C981-4ECB-8F20-313E731693DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8EA6E5D-C981-4ECB-8F20-313E731693DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D285D54A-D0F2-4222-B8A8-F345BF333F62} = {FCEBDF1C-E916-425B-9C91-76C58458B2D3}
+		{BE1A66F5-3334-4A2D-9551-4995CFC06F3E} = {FCEBDF1C-E916-425B-9C91-76C58458B2D3}
+		{3A53ED31-A9AF-4719-AA60-17EF862B0816} = {0941C87E-FC74-4080-B479-7D860C686EBB}
+		{439CFBBA-3BDC-4D5C-A99E-01B692FE8B76} = {02AF83FA-2EDD-4FD8-A1B1-D110988FAD01}
+		{C8EA6E5D-C981-4ECB-8F20-313E731693DA} = {02AF83FA-2EDD-4FD8-A1B1-D110988FAD01}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {148D3693-E4D2-44E8-9EA0-86315B03701E}
+	EndGlobalSection
+EndGlobal
