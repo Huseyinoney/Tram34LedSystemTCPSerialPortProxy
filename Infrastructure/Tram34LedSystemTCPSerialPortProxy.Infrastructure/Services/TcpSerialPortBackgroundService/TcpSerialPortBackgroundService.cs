@@ -804,6 +804,7 @@
 //    }
 //}
 
+// ÇALIŞAN KOD BU EN GÜNCEL ÇALIŞAN
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System.IO.Ports;
@@ -1014,3 +1015,243 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpSerialPor
         }
     }
 }
+
+
+//using Microsoft.Extensions.Configuration;
+//using Microsoft.Extensions.Hosting;
+//using System.IO.Ports;
+//using System.Net;
+//using System.Net.Sockets;
+//using Tram34LedSystemTCPSerialPortProxy.Application.Abstractions.SerialPortService;
+//using Tram34LedSystemTCPSerialPortProxy.Application.Abstractions.Tcp;
+
+//namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpSerialPortBackgroundService
+//{
+//    public class TcpSerialPortBackgroundService : BackgroundService
+//    {
+//        private readonly ITcpService tcpService;
+//        private readonly ISerialPortService serialPortService;
+//        private readonly IConfiguration configuration;
+
+//        private TcpListener tcpServer;
+//        private TcpClient tcpClient;
+//        private SerialPort serialPort;
+
+//        public TcpSerialPortBackgroundService(
+//            ITcpService tcpService,
+//            ISerialPortService serialPortService,
+//            IConfiguration configuration)
+//        {
+//            this.tcpService = tcpService;
+//            this.serialPortService = serialPortService;
+//            this.configuration = configuration;
+//        }
+
+//        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+//        {
+//            try
+//            {
+//                // === TCP Ayarları ===
+//                string? ipString = configuration["TcpServer:Ip"];
+//                string? portString = configuration["TcpServer:Port"];
+
+//                if (!IPAddress.TryParse(ipString, out var ipAddress))
+//                    ipAddress = IPAddress.Any;
+
+//                if (!int.TryParse(portString, out int tcpPort) || tcpPort <= 0 || tcpPort > 65535)
+//                    tcpPort = 7000;
+
+//                // === SerialPort Ayarları ===
+//                string? portName = configuration["SerialPort:PortName"];
+//                string? baudRateStr = configuration["SerialPort:BaudRate"];
+//                if (string.IsNullOrWhiteSpace(portName))
+//                    portName = "COM12";
+//                if (!int.TryParse(baudRateStr, out int baudRate) || baudRate <= 0)
+//                    baudRate = 19200;
+
+//                // === TCP Server başlat ===
+//                tcpServer = tcpService.CreateTcpServer(ipAddress, tcpPort);
+//                tcpService.StartTcpServer(tcpServer);
+//                Console.WriteLine($"TCP Sunucu dinliyor: {ipAddress}:{tcpPort}");
+
+//                // SerialPort oluştur ama açma burada değil, client bağlanınca açacağız
+//                serialPort = serialPortService.CreateSerialPort(portName, baudRate);
+
+//                while (!stoppingToken.IsCancellationRequested)
+//                {
+//                    try
+//                    {
+//                        Console.WriteLine("Yeni TCP client bekleniyor...\n");
+//                        var client = await tcpServer.AcceptTcpClientAsync(stoppingToken);
+//                        tcpClient = client;
+//                        Console.WriteLine($"TCP client bağlandı: {tcpClient.Client.RemoteEndPoint}");
+
+//                        // 🔹 Client bağlanınca serial portu aç
+//                        TryOpenSerialPort();
+
+//                        await RunClientAsync(tcpClient, stoppingToken);
+
+//                        Console.WriteLine("Client bağlantısı sona erdi, tekrar bekleniyor...\n");
+//                        CloseClient();
+//                    }
+//                    catch (OperationCanceledException)
+//                    {
+//                        break;
+//                    }
+//                    catch (Exception ex)
+//                    {
+//                        Console.WriteLine($"Ana döngü hatası: {ex.Message}");
+//                        CloseClient();
+//                        await Task.Delay(1000, stoppingToken);
+//                    }
+//                }
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine($"TcpSerialPortBackgroundService genel hata: {ex.Message}");
+//            }
+//            finally
+//            {
+//                tcpServer?.Stop();
+//                CloseClient();
+//                if (serialPort?.IsOpen == true)
+//                    serialPort.Close();
+//                Console.WriteLine("Servis kapatıldı.");
+//            }
+//        }
+
+//        private async Task RunClientAsync(TcpClient client, CancellationToken stoppingToken)
+//        {
+//            try
+//            {
+//                // TCP→Serial veri yönü
+//                var tcpToSerial = HandleTcpToSerialAsync(client, stoppingToken);
+
+//                // Serial→TCP veri yönü
+//                var serialToTcp = HandleSerialToTcpAsync(client, stoppingToken);
+
+//                await Task.WhenAll(tcpToSerial, serialToTcp);
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine($"RunClientAsync hata: {ex.Message}");
+//            }
+//            finally
+//            {
+//                Console.WriteLine("Client bağlantısı kapatılıyor...");
+//                CloseClient();
+//            }
+//        }
+
+//        private async Task HandleTcpToSerialAsync(TcpClient client, CancellationToken token)
+//        {
+//            try
+//            {
+//                while (!token.IsCancellationRequested)
+//                {
+//                    var frame = await tcpService.ReadTcpFrameAsync(client, token);
+//                    if (frame == null)
+//                    {
+//                        Console.WriteLine("TCP bağlantısı kapandı.");
+//                        break;
+//                    }
+
+//                    // ✅ Gelen frame’i doğrula
+//                    var checkedFrame = tcpService.ProcessClientBuffer(frame);
+//                    if (checkedFrame == null)
+//                        continue;
+
+//                    // ✅ Seri port açık değilse aç
+//                    TryOpenSerialPort();
+
+//                    // ✅ Seri porta gönder
+//                    await serialPortService.SendSerialPortData(checkedFrame);
+
+//                    // ✅ Şimdi 5 saniye boyunca seri port dinle
+//                    Console.WriteLine("Seri port 5 saniye boyunca dinleniyor...");
+//                    using var lifetime = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+//                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
+
+//                    await serialPortService.ReadSerialPortDataAsync(client, tcpService, serialPort, linked.Token);
+
+//                    Console.WriteLine("5 saniye doldu, seri port kapatılıyor...");
+//                    serialPortService.CloseSerialPort(serialPort);
+//                }
+//            }
+//            catch (IOException ex)
+//            {
+//                Console.WriteLine($"TCP→Serial bağlantı koptu: {ex.Message}");
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine($"TCP→Serial hata: {ex.Message}");
+//            }
+//        }
+
+
+//        private async Task HandleSerialToTcpAsync(TcpClient client, CancellationToken token)
+//        {
+//            try
+//            {
+//                if (serialPort?.IsOpen == true)
+//                    await serialPortService.ReadSerialPortDataAsync(client, tcpService, serialPort, token);
+//            }
+//            catch (IOException ex)
+//            {
+//                Console.WriteLine($"Serial→TCP bağlantı koptu: {ex.Message}");
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine($"Serial→TCP hata: {ex.Message}");
+//            }
+//        }
+
+//        private void CloseClient()
+//        {
+//            try
+//            {
+//                if (tcpClient != null)
+//                {
+//                    try { tcpClient.GetStream()?.Close(); } catch { }
+//                    try { tcpClient.Close(); } catch { }
+//                    try { tcpClient.Dispose(); } catch { }
+//                }
+
+//                if (serialPort != null && serialPort.IsOpen)
+//                {
+//                    try
+//                    {
+//                        serialPort.Close();
+//                        Console.WriteLine("TCP bağlantısı koptu, seri port kapatıldı.");
+//                    }
+//                    catch (Exception ex)
+//                    {
+//                        Console.WriteLine($"Seri port kapatma hatası: {ex.Message}");
+//                    }
+//                }
+//            }
+//            catch { }
+//            finally
+//            {
+//                tcpClient = null;
+//            }
+//        }
+
+//        private void TryOpenSerialPort()
+//        {
+//            try
+//            {
+//                if (serialPort == null) return;
+//                if (!serialPort.IsOpen)
+//                {
+//                    serialPortService.OpenSerialPort(serialPort);
+//                    Console.WriteLine($"Serial port {serialPort.PortName} açıldı.");
+//                }
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine($"Serial port açma hatası: {ex.Message}");
+//            }
+//        }
+//    }
+//}

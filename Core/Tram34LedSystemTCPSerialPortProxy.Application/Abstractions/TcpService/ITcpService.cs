@@ -14,6 +14,8 @@ namespace Tram34LedSystemTCPSerialPortProxy.Application.Abstractions.Tcp
         public bool StopTcpServer(TcpListener tcpListener);
 
         public Task ReadTcpAsync(TcpClient tcpClient, ISerialPortService serialPortService, CancellationToken token);
+
+        //   Task<byte[]?> ReadTcpFrameAsync(TcpClient tcpClient, CancellationToken token);
         Task<bool> SendTcpDataAsync(TcpClient client, byte[] data, CancellationToken token);
 
         public byte[]? ProcessClientBuffer(byte[] tcpBuffer);

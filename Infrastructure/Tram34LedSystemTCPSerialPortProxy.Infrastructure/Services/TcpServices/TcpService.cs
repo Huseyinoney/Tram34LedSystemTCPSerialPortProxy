@@ -55,6 +55,7 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpServices
             return tcpBuffer;
         }
 
+        //Çalışan ReadTcpAsync
         public async Task ReadTcpAsync(TcpClient tcpClient, ISerialPortService serialPortService, CancellationToken token)
         {
             try
@@ -108,6 +109,52 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpServices
             }
         }
 
+        //public async Task<byte[]?> ReadTcpFrameAsync(TcpClient tcpClient, CancellationToken token)
+        //{
+        //    try
+        //    {
+        //        NetworkStream tcpStream = tcpClient.GetStream();
+
+        //        // 1️⃣ Header (5 byte)
+        //        byte[] header = new byte[5];
+        //        int readHeader = 0;
+        //        while (readHeader < 5)
+        //        {
+        //            int n = await tcpStream.ReadAsync(header, readHeader, 5 - readHeader, token);
+        //            if (n == 0) return null; // bağlantı kapandı
+        //            readHeader += n;
+        //        }
+
+        //        // 2️⃣ Data uzunluğu
+        //        int dataLength = (header[3] << 8) | header[4];
+
+        //        // 3️⃣ Data + ETX + checksum
+        //        byte[] dataPlus = new byte[dataLength + 2];
+        //        int readData = 0;
+        //        while (readData < dataPlus.Length)
+        //        {
+        //            int n = await tcpStream.ReadAsync(dataPlus, readData, dataPlus.Length - readData, token);
+        //            if (n == 0) return null;
+        //            readData += n;
+        //        }
+
+        //        // 4️⃣ Frame birleştir
+        //        byte[] frame = new byte[5 + dataPlus.Length];
+        //        Array.Copy(header, 0, frame, 0, 5);
+        //        Array.Copy(dataPlus, 0, frame, 5, dataPlus.Length);
+
+        //        return frame;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"TCP frame okuma hatası: {ex.Message}");
+        //        return null;
+        //    }
+        //}
+
+
+
+
         public bool StartTcpServer(TcpListener tcpListener)
         {
             try
@@ -139,6 +186,7 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpServices
         public async Task<bool> SendTcpDataAsync(TcpClient client, byte[] data, CancellationToken token)
         {
             if (client == null || !client.Connected)
+
             {
                 return false;
             }
