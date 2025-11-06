@@ -245,10 +245,10 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
         {
             try
             {
-                serialPort.DiscardInBuffer();
-                //    await serialPort.BaseStream.WriteAsync(frame, 0, frame.Length);
+              //  serialPort.DiscardInBuffer();
+                await serialPort.BaseStream.WriteAsync(frame, 0, frame.Length);
 
-                serialPort.Write(frame,0,frame.Length);
+                //serialPort.Write(frame,0,frame.Length);
                 Console.WriteLine($" TCP to {serialPort.PortName} ({frame.Length} byte): {BitConverter.ToString(frame)}");
                 return true;
             }
@@ -333,7 +333,7 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
 
 
 
-       // ÇALIŞAN Versiyon 5sn Olmadan
+        // ÇALIŞAN Versiyon 5sn Olmadan
         public async Task<bool> ReadSerialPortDataAsync(TcpClient tcpClient, ITcpService tcpService, SerialPort serialPort, CancellationToken cancellationToken)
         {
             if (serialPort == null || !serialPort.IsOpen)
