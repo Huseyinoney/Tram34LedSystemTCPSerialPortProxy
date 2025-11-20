@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using Microsoft.Extensions.Configuration;
+using System.Net;
 using System.Net.Sockets;
 using Tram34LedSystemTCPSerialPortProxy.Application.Abstractions.SerialPortService;
 using Tram34LedSystemTCPSerialPortProxy.Application.Abstractions.Tcp;
@@ -8,6 +9,12 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpServices
     public class TcpService : ITcpService
     {
         private TcpListener tcpListener;
+        private readonly IConfiguration configuration;
+
+        public TcpService(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
 
         public TcpListener CreateTcpServer(IPAddress ıPAddress, int port)
         {
@@ -101,6 +108,7 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpServices
                     {
                         await serialPortService.SendSerialPortData(CheckedFrames);
                     }
+                    await Task.Delay(Convert.ToInt32(configuration["SerialPort:DelayMs"]));
                 }
             }
             catch (Exception ex)

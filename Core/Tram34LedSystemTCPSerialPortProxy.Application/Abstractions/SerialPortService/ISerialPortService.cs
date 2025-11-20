@@ -8,12 +8,14 @@ namespace Tram34LedSystemTCPSerialPortProxy.Application.Abstractions.SerialPortS
     {
         public SerialPort CreateSerialPort(string portName, int baudRate);
 
-        public bool OpenSerialPort(SerialPort serialPort);
+        public Task<bool> OpenSerialPort(SerialPort serialPort);
 
-        public bool CloseSerialPort(SerialPort serialPort);
+        public Task<bool> CloseSerialPort(SerialPort serialPort);
 
         public Task<bool> SendSerialPortData(byte[] frame);
 
         Task<bool> ReadSerialPortDataAsync(TcpClient tcpClient, ITcpService tcpService,SerialPort serialPort, CancellationToken cancellationToken);
+
+        public Task ResetSerialPortProxy(SerialPort serialPort);
     }
 }

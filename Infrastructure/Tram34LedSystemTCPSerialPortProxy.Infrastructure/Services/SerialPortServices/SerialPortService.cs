@@ -183,9 +183,13 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
     {
         private SerialPort serialPort;
         private TcpClient tcpClient;
+        private readonly SemaphoreSlim _serialLock = new(1, 1);
+        private SerialDataReceivedEventHandler serialPortDataReceivedWrapper;
 
-        public bool CloseSerialPort(SerialPort serialPort)
+
+        public async Task<bool> CloseSerialPort(SerialPort serialPort)
         {
+            await _serialLock.WaitAsync();
             try
             {
                 if (serialPort.IsOpen)
@@ -204,6 +208,10 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
                 Console.WriteLine("Soket Bağlantısı Kapatılırken Bir Hata Oluştu... " + ex.Message);
                 return false;
             }
+            finally
+            {
+                _serialLock.Release();
+            }
         }
 
         public SerialPort CreateSerialPort(string portName, int baudRate)
@@ -211,6 +219,7 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
             try
             {
                 serialPort = new SerialPort(portName, baudRate);
+                serialPort.ReceivedBytesThreshold = 1;
                 return serialPort;
             }
             catch (Exception ex)
@@ -219,8 +228,9 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
             }
         }
 
-        public bool OpenSerialPort(SerialPort serialPort)
+        public async Task<bool> OpenSerialPort(SerialPort serialPort)
         {
+            await _serialLock.WaitAsync();
             try
             {
                 if (!serialPort.IsOpen)
@@ -239,16 +249,25 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
                 Console.WriteLine("Soket Bağlantısı Açılırken Bir Hata Oluştu... " + ex.Message);
                 return false;
             }
+            finally
+            {
+                _serialLock.Release();
+            }
         }
 
         public async Task<bool> SendSerialPortData(byte[] frame)
         {
+            await _serialLock.WaitAsync();
             try
             {
-              //  serialPort.DiscardInBuffer();
+                if (!serialPort.IsOpen) await OpenSerialPort(serialPort);
+                //  serialPort.DiscardInBuffer();
                 await serialPort.BaseStream.WriteAsync(frame, 0, frame.Length);
 
-                //serialPort.Write(frame,0,frame.Length);
+                /* bunu sonradan ekledim çalışan versiyonda yok*/
+                 await serialPort.BaseStream.FlushAsync();
+
+               // serialPort.Write(frame, 0, frame.Length);
                 Console.WriteLine($" TCP to {serialPort.PortName} ({frame.Length} byte): {BitConverter.ToString(frame)}");
                 return true;
             }
@@ -256,6 +275,10 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
             {
                 Console.WriteLine("Serial write hatası: " + ex.Message);
                 return false;
+            }
+            finally
+            {
+                _serialLock.Release();
             }
         }
 
@@ -333,128 +356,366 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.SerialPortSe
 
 
 
-        // ÇALIŞAN Versiyon 5sn Olmadan
-        public async Task<bool> ReadSerialPortDataAsync(TcpClient tcpClient, ITcpService tcpService, SerialPort serialPort, CancellationToken cancellationToken)
+        //// ÇALIŞAN Versiyon 5sn Olmadan
+        //public async Task<bool> ReadSerialPortDataAsync(TcpClient tcpClient, ITcpService tcpService, SerialPort serialPort, CancellationToken cancellationToken)
+        //{
+        //    if (serialPort == null || !serialPort.IsOpen)
+        //    {
+        //        Console.WriteLine(" Seri port açık değil veya null!");
+        //        return false;
+        //    }
+
+        //    try
+        //    {
+        //        Console.WriteLine(" Seri port veri bekleniyor...");
+        //        List<byte> bufferList = new List<byte>();
+        //        this.tcpClient = tcpClient;
+
+        //        // Önce event'i temizle, sonra güvenli şekilde bağla
+        //        serialPort.DataReceived -= SerialPortDataReceivedWrapper;
+        //        serialPort.DataReceived += SerialPortDataReceivedWrapper;
+
+        //        void SerialPortDataReceivedWrapper(object sender, SerialDataReceivedEventArgs e)
+        //        {
+        //            HandleDataReceived(sender, e, tcpService, bufferList, cancellationToken);
+        //        }
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(" Seri port okuma hatası: " + ex.Message);
+        //        return false;
+        //    }
+        //}
+
+        //çalışıyor güncel
+
+        //    public async Task<bool> ReadSerialPortDataAsync(
+        //TcpClient tcpClient,
+        //ITcpService tcpService,
+        //SerialPort serialPort,
+        //CancellationToken cancellationToken)
+        //    {
+        //        if (serialPort == null || !serialPort.IsOpen)
+        //        {
+        //            Console.WriteLine("Seri port açık değil veya null!");
+        //            return false;
+        //        }
+
+        //        try
+        //        {
+        //            Console.WriteLine("Seri port veri bekleniyor...");
+        //            List<byte> bufferList = new List<byte>();
+        //            this.tcpClient = tcpClient;
+
+        //            // Daha önce bağlandıysa kaldır
+        //            serialPort.DataReceived -= SerialPortDataReceivedWrapper;
+        //            serialPort.DataReceived += SerialPortDataReceivedWrapper;
+
+        //            async Task SerialPortDataReceivedWrapper(object sender, SerialDataReceivedEventArgs e)
+        //            {
+        //                try
+        //                {
+        //                   await  HandleDataReceived(sender, e, tcpService, bufferList, cancellationToken);
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    Console.WriteLine($"DataReceived wrapper hatası: {ex.Message}");
+        //                }
+        //            }
+
+        //            return true;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Console.WriteLine("Seri port okuma hatası: " + ex.Message);
+        //            return false;
+        //        }
+        //    }
+
+        //    public async Task<bool> ReadSerialPortDataAsync(
+        //TcpClient tcpClient,
+        //ITcpService tcpService,
+        //SerialPort serialPort,
+        //CancellationToken cancellationToken)
+        //    {
+        //        if (serialPort == null || !serialPort.IsOpen)
+        //        {
+        //            Console.WriteLine("Seri port açık değil veya null!");
+        //            return false;
+        //        }
+
+        //        try
+        //        {
+        //            Console.WriteLine("Seri port veri bekleniyor...");
+        //            List<byte> bufferList = new List<byte>();
+        //            this.tcpClient = tcpClient;
+
+        //            // Daha önce bağlandıysa kaldır
+        //            serialPort.DataReceived -= SerialPortDataReceivedWrapper;
+        //            serialPort.DataReceived += SerialPortDataReceivedWrapper;
+
+        //            void SerialPortDataReceivedWrapper(object sender, SerialDataReceivedEventArgs e)
+        //            {
+        //                // Task.Run ile arka planda çalıştır
+        //                _ = Task.Run(async () =>
+        //                {
+        //                    try
+        //                    {
+        //                        await HandleDataReceived(sender, e, tcpService, bufferList, cancellationToken);
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        Console.WriteLine($"DataReceived Task hatası: {ex.Message}");
+        //                    }
+        //                });
+        //            }
+
+        //            return true;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Console.WriteLine("Seri port okuma hatası: " + ex.Message);
+        //            return false;
+        //        }
+        //    }
+
+
+        // Class seviyesinde ekle
+
+
+        public async Task<bool> ReadSerialPortDataAsync(
+            TcpClient tcpClient,
+            ITcpService tcpService,
+            SerialPort serialPort,
+            CancellationToken cancellationToken)
         {
             if (serialPort == null || !serialPort.IsOpen)
             {
-                Console.WriteLine(" Seri port açık değil veya null!");
+                Console.WriteLine("Seri port açık değil veya null!");
                 return false;
             }
 
             try
             {
-                Console.WriteLine(" Seri port veri bekleniyor...");
+                Console.WriteLine("Seri port veri bekleniyor...");
                 List<byte> bufferList = new List<byte>();
                 this.tcpClient = tcpClient;
 
-                // Önce event'i temizle, sonra güvenli şekilde bağla
-                serialPort.DataReceived -= SerialPortDataReceivedWrapper;
-                serialPort.DataReceived += SerialPortDataReceivedWrapper;
-
-                void SerialPortDataReceivedWrapper(object sender, SerialDataReceivedEventArgs e)
+                // Eğer daha önce bağlanmamışsa event handler oluştur
+                if (serialPortDataReceivedWrapper == null)
                 {
-                    HandleDataReceived(sender, e, tcpService, bufferList, cancellationToken);
+                    serialPortDataReceivedWrapper = (sender, e) =>
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await HandleDataReceived(sender, e, tcpService, bufferList, cancellationToken);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"DataReceived Task hatası: {ex.Message}");
+                            }
+                        });
+                    };
                 }
+
+                // Event'i önce kaldır, sonra ekle (safe)
+                serialPort.DataReceived -= serialPortDataReceivedWrapper;
+                serialPort.DataReceived += serialPortDataReceivedWrapper;
 
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(" Seri port okuma hatası: " + ex.Message);
+                Console.WriteLine("Seri port okuma hatası: " + ex.Message);
                 return false;
             }
         }
 
+
+
+
         //Çalışan Handle
-        private async void HandleDataReceived(object sender, SerialDataReceivedEventArgs e, ITcpService tcpService, List<byte> bufferList, CancellationToken cancellationToken)
+        //private async void HandleDataReceived(object sender, SerialDataReceivedEventArgs e, ITcpService tcpService, List<byte> bufferList, CancellationToken cancellationToken)
+        //{
+        //    try
+        //    {
+        //        var sp = (SerialPort)sender;
+        //        int bytesToRead = sp.BytesToRead;
+        //        if (bytesToRead <= 0) return;
+
+        //        byte[] temp = new byte[bytesToRead];
+        //        sp.Read(temp, 0, bytesToRead);
+        //        bufferList.AddRange(temp);
+
+        //        // Frame kontrolü
+        //        int start = bufferList.IndexOf(0x02); // STX
+        //        int etx = bufferList.IndexOf(0x03);   // ETX
+
+        //        if (start >= 0 && etx > start && bufferList.Count > etx + 1)
+        //        {
+        //            int frameLength = etx - start + 2; // ETX + 1 byte checksum
+        //            byte[] frame = bufferList.Skip(start).Take(frameLength).ToArray();
+
+        //            // Buffer'dan çıkar
+        //            bufferList.RemoveRange(0, start + frameLength);
+
+        //            Console.WriteLine($" Frame bulundu ({frameLength} byte): {BitConverter.ToString(frame)}");
+
+        //            if (tcpClient?.Connected == true)
+        //            {
+        //                await tcpService.SendTcpDataAsync(tcpClient, frame, cancellationToken);
+        //                Console.WriteLine(" Frame TCP'ye gönderildi.");
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine("DataReceived hatası: " + ex.Message);
+        //    }
+        //}
+
+
+        public async Task ResetSerialPortProxy(SerialPort serialPort)
         {
+            await _serialLock.WaitAsync();
+            try
+            {
+                if (serialPort != null)
+                {
+                    // DataReceived eventlerini kaldır
+                    serialPort.DataReceived -= serialPortDataReceivedWrapper;
+
+                    if (serialPort.IsOpen)
+                    {
+                        try
+                        {
+                            // Buffer'ları port kapanmadan temizle
+                            serialPort.DiscardInBuffer();
+                            serialPort.DiscardOutBuffer();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Buffer temizleme hatası (önemsiz): {ex.Message}");
+                        }
+
+                        // Portu kapat
+                        serialPort.Close();
+                        Console.WriteLine("🔌 Seri port resetlendi ve kapatıldı.");
+                    }
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ResetSerialPortProxy hatası: {ex.Message}");
+            }
+            finally
+            {
+                _serialLock.Release();
+            }
+        }
+
+
+        private bool _isReading = false;
+
+        private async Task HandleDataReceived(
+            object sender,
+            SerialDataReceivedEventArgs e,
+            ITcpService tcpService,
+            List<byte> bufferList,
+            CancellationToken cancellationToken)
+        {
+            if (_isReading)
+                return; // önceki okuma bitmeden girme
+
+            _isReading = true;
             try
             {
                 var sp = (SerialPort)sender;
                 int bytesToRead = sp.BytesToRead;
-                if (bytesToRead <= 0) return;
+                if (bytesToRead <= 0)
+                    return;
 
                 byte[] temp = new byte[bytesToRead];
                 sp.Read(temp, 0, bytesToRead);
                 bufferList.AddRange(temp);
 
-                // Frame kontrolü
-                int start = bufferList.IndexOf(0x02); // STX
-                int etx = bufferList.IndexOf(0x03);   // ETX
+                const int HeaderLength = 5;
+                const int FooterLength = 2;
+                const int AckFrameLength = 8;   // LED ACK cevabı
+                const int MinimumFrameLength = 23; // Gerçek veri frame'i
 
-                if (start >= 0 && etx > start && bufferList.Count > etx + 1)
+                int start = bufferList.IndexOf(0x02);
+                if (start < 0)
                 {
-                    int frameLength = etx - start + 2; // ETX + 1 byte checksum
-                    byte[] frame = bufferList.Skip(start).Take(frameLength).ToArray();
+                    bufferList.Clear();
+                    return;
+                }
 
-                    // Buffer'dan çıkar
-                    bufferList.RemoveRange(0, start + frameLength);
+                if (bufferList.Count < start + HeaderLength)
+                    return;
 
-                    Console.WriteLine($" Frame bulundu ({frameLength} byte): {BitConverter.ToString(frame)}");
+                int dataLength = (bufferList[start + 3] << 8) | bufferList[start + 4];
+                int frameLength = HeaderLength + dataLength + FooterLength;
+
+                // frame henüz tam gelmemişse bekle
+                if (bufferList.Count < start + frameLength)
+                    return;
+
+                // 0x03 bitiş kontrolü
+                if (bufferList[start + frameLength - 2] != 0x03)
+                {
+                    Console.WriteLine("Geçersiz frame (ETX hatalı), buffer temizleniyor.");
+                    bufferList.Clear();
+                    return;
+                }
+
+                // Frame çıkar
+                byte[] frame = bufferList.Skip(start).Take(frameLength).ToArray();
+                bufferList.RemoveRange(0, start + frameLength);
+
+                foreach (var item in frame)
+                {
+                    Console.Write(item);
+                }
+                // 8 byte'lık ACK frame'leri sadece logla, TCP'ye gönderme
+                if (frameLength == AckFrameLength)
+                {
+                    Console.WriteLine($"ACK frame alındı ({frameLength} byte): {BitConverter.ToString(frame)}");
+                }
+                else if (frameLength >= MinimumFrameLength)
+                {
+                    Console.WriteLine($"Veri frame bulundu ({frameLength} byte): {BitConverter.ToString(frame)}");
 
                     if (tcpClient?.Connected == true)
                     {
                         await tcpService.SendTcpDataAsync(tcpClient, frame, cancellationToken);
-                        Console.WriteLine(" Frame TCP'ye gönderildi.");
+                        Console.WriteLine("Frame TCP'ye gönderildi.");
                     }
+                }
+                else
+                {
+                    Console.WriteLine($"Geçersiz frame uzunluğu ({frameLength}), atlanıyor.");
+                }
 
+                if (bufferList.Count > 2000)
+                {
+                    Console.WriteLine("Buffer temizlendi (overflow koruması).");
+                    bufferList.Clear();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("DataReceived hatası: " + ex.Message);
+                Console.WriteLine($"HandleDataReceived hatası: {ex.Message}");
+            }
+            finally
+            {
+                _isReading = false;
             }
         }
-
-        //    private bool HandleDataReceived(
-        //object sender,
-        //SerialDataReceivedEventArgs e,
-        //ITcpService tcpService,
-        //List<byte> bufferList,
-        //CancellationToken cancellationToken)
-        //    {
-        //        try
-        //        {
-        //            var sp = (SerialPort)sender;
-        //            int bytesToRead = sp.BytesToRead;
-        //            if (bytesToRead <= 0) return false;
-
-        //            byte[] temp = new byte[bytesToRead];
-        //            sp.Read(temp, 0, bytesToRead);
-        //            bufferList.AddRange(temp);
-
-        //            int start = bufferList.IndexOf(0x02); // STX
-        //            int etx = bufferList.IndexOf(0x03);   // ETX
-
-        //            if (start >= 0 && etx > start && bufferList.Count > etx + 1)
-        //            {
-        //                int frameLength = etx - start + 2; // ETX + checksum
-        //                byte[] frame = bufferList.Skip(start).Take(frameLength).ToArray();
-
-        //                bufferList.RemoveRange(0, start + frameLength);
-
-        //                Console.WriteLine($" Frame bulundu ({frameLength} byte): {BitConverter.ToString(frame)}");
-
-        //                if (tcpClient?.Connected == true)
-        //                {
-        //                    _ = tcpService.SendTcpDataAsync(tcpClient, frame, cancellationToken);
-        //                    Console.WriteLine(" Frame TCP'ye gönderildi.");
-        //                }
-
-        //                return true; // ✅ Frame tamamlandı
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine("DataReceived hatası: " + ex.Message);
-        //        }
-
-        //        return false;
-        //    }
-
-
-
-
     }
 }
