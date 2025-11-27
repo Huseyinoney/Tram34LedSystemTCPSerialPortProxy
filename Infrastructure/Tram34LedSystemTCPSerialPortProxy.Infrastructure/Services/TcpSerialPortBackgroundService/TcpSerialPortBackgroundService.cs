@@ -862,8 +862,10 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpSerialPor
                 tcpService.StartTcpServer(tcpServer);
                 Console.WriteLine($"TCP Sunucu dinliyor: {ipAddress}:{tcpPort}");
 
+                await serialPortService.ResetDummySerialPort();
+
                 serialPort = serialPortService.CreateSerialPort(portName, baudRate);
-                await serialPortService.ResetSerialPortProxy(serialPort);
+                await serialPortService.ResetSerialPortProxy();
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -905,9 +907,9 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpSerialPor
                 tcpServer?.Stop();
                 CloseClient();
                 if (serialPort?.IsOpen == true)
-                    await serialPortService.ResetSerialPortProxy(serialPort); // temizle
+                    await serialPortService.ResetSerialPortProxy(); // temizle
                 if (serialPort?.IsOpen == true)
-                    await serialPortService.CloseSerialPort(serialPort);
+                    await serialPortService.CloseSerialPort();
                 Console.WriteLine("Servis kapatıldı.");
             }
         }
@@ -931,7 +933,7 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpSerialPor
                 Console.WriteLine("Client bağlantısı kapatılıyor...");
                 CloseClient();
                 if (serialPort != null)
-                    await serialPortService.ResetSerialPortProxy(serialPort);
+                    await serialPortService.ResetSerialPortProxy();
             }
         }
 
@@ -962,7 +964,7 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpSerialPor
                         return;
                 }
 
-                await serialPortService.ReadSerialPortDataAsync(client, tcpService, serialPort, token);
+                await serialPortService.ReadSerialPortDataAsync(client, tcpService, token);
             }
             catch (IOException ex)
             {
@@ -1013,10 +1015,10 @@ namespace Tram34LedSystemTCPSerialPortProxy.Infrastructure.Services.TcpSerialPor
 
                 // Eğer port daha önce takılı kaldıysa, temizlemeden açma deneme.
                 // ResetSerialPortProxy smart; açık değilse no-op (veya sadece event detach yapar).
-                await serialPortService.ResetSerialPortProxy(serialPort);
+                await serialPortService.ResetSerialPortProxy();
 
                 if (!serialPort.IsOpen)
-                    await serialPortService.OpenSerialPort(serialPort);
+                    await serialPortService.OpenSerialPort();
             }
             catch (Exception ex)
             {
