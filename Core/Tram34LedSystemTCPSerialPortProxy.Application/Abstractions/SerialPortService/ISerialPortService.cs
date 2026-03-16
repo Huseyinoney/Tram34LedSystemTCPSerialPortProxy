@@ -10,14 +10,11 @@ namespace Tram34LedSystemTCPSerialPortProxy.Application.Abstractions.SerialPortS
 
         public Task<bool> OpenSerialPort();
 
-        public Task<bool> CloseSerialPort();
-
         public Task<bool> SendSerialPortData(byte[] frame);
 
         Task<bool> ReadSerialPortDataAsync(TcpClient tcpClient, ITcpService tcpService, CancellationToken cancellationToken);
 
         public Task ResetSerialPortProxy();
 
-        public Task ResetDummySerialPort(string portName = "COM12", int baudRate = 19200);
     }
 }
